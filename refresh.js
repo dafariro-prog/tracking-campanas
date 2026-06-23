@@ -21,6 +21,10 @@ const DAYS_SER  = 60;   // ventana de la serie diaria
 
 const lookup = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'homologacion.json'), 'utf8'));
 const accounts = [...new Set(Object.keys(lookup).map(k => k.split('||')[1]))];
+// Mapa planner/implementador por cuenta homologada (opcional)
+let planner = {};
+try { planner = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'planner.json'), 'utf8')); } catch (e) {}
+const pi = hom => planner[hom] || { planner: '', implementador: '' };
 const num = v => (v === null || v === undefined || v === '' ? 0 : +v);
 const dval = d => (d && d.value) ? d.value : d;  // BigQueryDate -> 'YYYY-MM-DD'
 
@@ -69,7 +73,7 @@ async function run(query) {
     const h = lookup[r.platform + '||' + r.account_name];
     if (!h) continue;
     detalle.push({
-      agencia: h.ag, pais: h.pais, cuenta: h.hom,
+      agencia: h.ag, pais: h.pais, cuenta: h.hom, ...pi(h.hom),
       campana: r.campana || '(sin nombre)', plataforma: r.platform,
       objetivo: r.objetivo, inicio: dval(r.inicio), fin: dval(r.fin), last_spend: dval(r.last_spend),
       spend: num(r.spend), impressions: num(r.impressions), clicks: num(r.clicks),
@@ -82,7 +86,7 @@ async function run(query) {
     const h = lookup[r.platform + '||' + r.account_name];
     if (!h) continue;
     rows.push({
-      date: dval(r.date), agencia: h.ag, pais: h.pais, cuenta: h.hom, plataforma: r.platform,
+      date: dval(r.date), agencia: h.ag, pais: h.pais, cuenta: h.hom, ...pi(h.hom), plataforma: r.platform,
       spend: num(r.spend), impressions: num(r.impressions), clicks: num(r.clicks),
       views: num(r.views), conversions: num(r.conversions),
     });

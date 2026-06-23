@@ -121,8 +121,6 @@
     <div class="logos" id="logos"></div>
   </header>
 
-  <div class="note" id="mvpNote"></div>
-
   <div class="filters">
     <div class="fgroup">
       <label>Agencia</label>
@@ -247,7 +245,11 @@ let lineChart, platChart, sortK='spend', sortDir=-1;
 
 function fmt(n){return new Intl.NumberFormat('es').format(Math.round(n));}
 function fmt2(n){return new Intl.NumberFormat('es',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n);}
-const money=n=>'$'+fmt2(n);
+// Moneda: Colombia=COP. Filtrando Colombia muestra COP; en cualquier otra vista convierte COP->USD.
+const RATE_COP=3800;
+function copModeNow(){const e=document.getElementById('fPais');return !!(e&&e.value==='Colombia');}
+function convSpend(r){ if(copModeNow()) return r.spend; return r.pais==='Colombia'? r.spend/RATE_COP : r.spend; }
+const money=n=> copModeNow() ? '$'+fmt(n)+' COP' : '$'+fmt2(n);
 const pct=n=>(n*100).toFixed(2)+'%';
 
 // Estado de campaña: sin consumo por más de 5 días = finalizada
@@ -266,8 +268,6 @@ fetch('data/tracking.json').then(r=>r.json()).then(d=>{
   DATA._thr=daysBefore(DATA._ref,DIAS_INACTIVA);
   document.getElementById('meta').textContent =
     `Campañas ${d.rango.min} → ${d.rango.max} · serie diaria ${(d.rango_serie||d.rango).min} → ${(d.rango_serie||d.rango).max} · actualizado ${new Date(d.updated).toLocaleString('es')}`;
-  document.getElementById('mvpNote').innerHTML =
-    'ℹ️ <b>Datos reales</b> de BigQuery cruzados con tu tabla de homologación · gasto en moneda nativa sin convertir.';
   buildFilters(); render();
 });
 
@@ -389,7 +389,8 @@ function filtered(){
   return DATA.rows.filter(r=>
     (!a||r.agencia===a)&&(!c||r.cuenta===c)&&(!p||r.pais===p)&&
     (!pl||r.planner===pl)&&(!im||r.implementador===im)&&platSel.has(r.plataforma)&&
-    (!yr||r.date.slice(0,4)===yr)&&(!mo||r.date.slice(5,7)===mo));
+    (!yr||r.date.slice(0,4)===yr)&&(!mo||r.date.slice(5,7)===mo))
+    .map(r=>({...r, spend:convSpend(r)}));
 }
 const sum=(arr,k)=>arr.reduce((s,r)=>s+r[k],0);
 
@@ -399,7 +400,8 @@ function detalleFiltered(){
     (!a||r.agencia===a)&&(!c||r.cuenta===c)&&(!p||r.pais===p)&&
     platSel.has(r.plataforma)&&tipoSel.has(tipoDe(r.objetivo))&&
     (!est || (est==='act'?esActiva(r):!esActiva(r)))&&
-    (!pl||r.planner===pl)&&(!im||r.implementador===im));
+    (!pl||r.planner===pl)&&(!im||r.implementador===im))
+    .map(r=>({...r, spend:convSpend(r)}));
 }
 // última fecha con consumo por campaña (para estado a nivel campaña)
 function lastSpendPorCampana(det){
@@ -449,7 +451,7 @@ function renderHero(det){
     {label:'Campañas',          val:fmt(camps.size),  sub:'en el periodo',                 dot:'#6366f1'},
     {label:'Plataformas',       val:plats.length,     sub:plats.join(' · ')||'—',          dot:'#0ea5e9'},
     {label:'Campañas activas',  val:activas,          sub:`consumo ≤ ${DIAS_INACTIVA} días`,dot:'#22c55e'},
-    {label:'Inversión',         val:money(spend),     sub:'moneda nativa',                 dot:'#f59e0b'},
+    {label:'Inversión',         val:money(spend),     sub:copModeNow()?'pesos colombianos (COP)':'USD · Colombia a $3.800', dot:'#f59e0b'},
   ];
   document.getElementById('hero').innerHTML=cards.map(c=>`
     <div class="hcard"><span class="h-dot" style="background:${c.dot}"></span>

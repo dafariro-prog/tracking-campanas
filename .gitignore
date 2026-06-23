@@ -8,4 +8,5 @@ gcp-key.json
 # artefactos de build de la homologación (se regeneran desde el .xlsx)
 *.xlsx
 homolog_rows.json
+pi_rows.json
 in_list.sql
