@@ -72,16 +72,25 @@ const schema = {
 };
 
 function promptCuenta(c) {
-  const tot = c.camps.reduce((a,r)=>({spend:a.spend+r.spend,impr:a.impr+r.impressions,clk:a.clk+r.clicks,conv:a.conv+r.conversions}),{spend:0,impr:0,clk:0,conv:0});
-  const rows = c.camps.slice().sort((a,b)=>b.spend-a.spend).slice(0,MAX_CAMP).map(r=>{
+  // Agregar por campaña (el detalle puede venir partido por mes)
+  const byC = {};
+  for (const r of c.camps) {
+    const k = r.campana+'|'+r.plataforma+'|'+r.objetivo;
+    const g = byC[k] || (byC[k] = { campana:r.campana, plataforma:r.plataforma, objetivo:r.objetivo, inicio:r.inicio, fin:r.fin, spend:0, impressions:0, clicks:0, views:0, conversions:0 });
+    g.spend+=r.spend; g.impressions+=r.impressions; g.clicks+=r.clicks; g.views+=r.views; g.conversions+=r.conversions;
+    if (r.inicio<g.inicio) g.inicio=r.inicio; if (r.fin>g.fin) g.fin=r.fin;
+  }
+  const camps = Object.values(byC);
+  const tot = camps.reduce((a,r)=>({spend:a.spend+r.spend,impr:a.impr+r.impressions,clk:a.clk+r.clicks,conv:a.conv+r.conversions}),{spend:0,impr:0,clk:0,conv:0});
+  const rows = camps.slice().sort((a,b)=>b.spend-a.spend).slice(0,MAX_CAMP).map(r=>{
     const ctr=r.impressions?r.clicks/r.impressions*100:0, cpc=r.clicks?r.spend/r.clicks:0,
           cpm=r.impressions?r.spend/r.impressions*1000:0, cpv=r.views?r.spend/r.views:0,
           cpa=r.conversions?r.spend/r.conversions:0;
     return `- "${r.campana}" | ${r.plataforma} | ${tipoDe(r.objetivo)} | ${r.inicio}→${r.fin} | gasto ${r2(r.spend)} | impr ${r.impressions} | clics ${r.clicks} | CTR ${r2(ctr)}% | CPC ${r2(cpc)} | CPM ${r2(cpm)} | CPV ${r2(cpv)} | conv ${r2(r.conversions)} | CPA ${r2(cpa)}`;
   }).join('\n');
   return `CUENTA: ${c.cuenta} · Agencia: ${c.agencia} · País: ${c.pais}
-Totales 90 días: gasto ${r2(tot.spend)} | impresiones ${tot.impr} | clics ${tot.clk} | conversiones ${r2(tot.conv)} | ${c.camps.length} campañas
-Campañas (top ${Math.min(MAX_CAMP,c.camps.length)} por inversión):
+Totales 90 días: gasto ${r2(tot.spend)} | impresiones ${tot.impr} | clics ${tot.clk} | conversiones ${r2(tot.conv)} | ${camps.length} campañas
+Campañas (top ${Math.min(MAX_CAMP,camps.length)} por inversión):
 ${rows}
 
 Analiza esta cuenta con la metodología y entrega un resumen + recomendaciones priorizadas (máx 5), cada una asociada a una campaña concreta (o "General") y su objetivo.`;

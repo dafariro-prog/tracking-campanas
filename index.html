@@ -392,10 +392,13 @@ function buildFilters(){
     oc.appendChild(c);
   });
 
-  // Año y Mes (sobre la serie diaria)
-  const anios=[...new Set(DATA.rows.map(r=>r.date.slice(0,4)))].sort();
+  // Año y Mes: del detalle si trae 'mes' (filtra todo); si no, de la serie diaria
+  const periodSrc = DATA.detalle.some(r=>r.mes)
+    ? [...new Set(DATA.detalle.map(r=>r.mes).filter(Boolean))]
+    : [...new Set(DATA.rows.map(r=>r.date.slice(0,7)))];
+  const anios=[...new Set(periodSrc.map(m=>m.slice(0,4)))].sort();
   document.getElementById('fAnio').innerHTML='<option value="">Todos</option>'+anios.map(y=>`<option>${y}</option>`).join('');
-  const meses=[...new Set(DATA.rows.map(r=>r.date.slice(5,7)))].sort();
+  const meses=[...new Set(periodSrc.map(m=>m.slice(5,7)))].sort();
   document.getElementById('fMes').innerHTML='<option value="">Todos</option>'+meses.map(m=>`<option value="${m}">${MES_NOMBRES[m]}</option>`).join('');
   document.getElementById('fAnio').onchange=render;
   document.getElementById('fMes').onchange=render;
@@ -462,12 +465,13 @@ function filtered(){
 const sum=(arr,k)=>arr.reduce((s,r)=>s+r[k],0);
 
 function detalleFiltered(){
-  const a=V('fAgencia'), c=V('fCuenta'), p=V('fPais'), est=V('fEstado'), pl=V('fPlanner'), im=V('fImplementador');
+  const a=V('fAgencia'), c=V('fCuenta'), p=V('fPais'), est=V('fEstado'), pl=V('fPlanner'), im=V('fImplementador'), yr=V('fAnio'), mo=V('fMes');
   return (DATA.detalle||[]).filter(r=>
     (!a||r.agencia===a)&&(!c||r.cuenta===c)&&(!p||r.pais===p)&&
     platSel.has(r.plataforma)&&tipoSel.has(tipoDe(r.objetivo))&&
     (!est || (est==='act'?esActiva(r):!esActiva(r)))&&
-    (!pl||r.planner===pl)&&(!im||r.implementador===im))
+    (!pl||r.planner===pl)&&(!im||r.implementador===im)&&
+    (!yr || !r.mes || r.mes.slice(0,4)===yr)&&(!mo || !r.mes || r.mes.slice(5,7)===mo))
     .map(r=>({...r, spend:convSpend(r)}));
 }
 // última fecha con consumo por campaña (para estado a nivel campaña)
@@ -640,7 +644,19 @@ const KPI_APLIC={Awareness:'cpm','Tráfico':'cpc',Views:'cpv','Conversión':'cpa
 const trunc=(s,n)=>(s&&s.length>n)?s.slice(0,n-1)+'…':(s||'');
 
 function renderTable(){
-  let arr=detalleFiltered().map(o=>{
+  // Agrega por campaña·plataforma·objetivo (suma meses si el filtro abarca varios)
+  const groups={};
+  detalleFiltered().forEach(o=>{
+    const k=o.campana+'|'+o.plataforma+'|'+o.objetivo;
+    const g=groups[k]||(groups[k]={agencia:o.agencia,pais:o.pais,cuenta:o.cuenta,planner:o.planner,implementador:o.implementador,
+      campana:o.campana,plataforma:o.plataforma,objetivo:o.objetivo,inicio:o.inicio,fin:o.fin,last_spend:o.last_spend,
+      spend:0,impressions:0,clicks:0,reach:0,views:0,engagements:0,conversions:0});
+    ['spend','impressions','clicks','reach','views','engagements','conversions'].forEach(kk=>g[kk]+=o[kk]||0);
+    if(o.inicio<g.inicio)g.inicio=o.inicio;
+    if(o.fin>g.fin)g.fin=o.fin;
+    if(o.last_spend&&(!g.last_spend||o.last_spend>g.last_spend))g.last_spend=o.last_spend;
+  });
+  let arr=Object.values(groups).map(o=>{
     const tipo=tipoDe(o.objetivo), M=TIPO_META[tipo];
     return {...o, tipo,
       activa:esActiva(o),

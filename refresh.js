@@ -33,6 +33,7 @@ const bq = new BigQuery({ projectId: PROJECT });
 const Q_DETALLE = `
   SELECT platform, account_name, campaign_name AS campana,
     COALESCE(objective,'(sin objetivo)') AS objetivo,
+    FORMAT_DATE('%Y-%m', date) AS mes,
     MIN(date) inicio, MAX(date) fin, MAX(IF(spend>0,date,NULL)) last_spend,
     ROUND(SUM(spend),2) spend,
     CAST(SUM(impressions) AS INT64) impressions,
@@ -44,7 +45,7 @@ const Q_DETALLE = `
   FROM ${VIEW}
   WHERE date >= DATE_SUB(CURRENT_DATE(), INTERVAL ${DAYS_DET} DAY)
     AND account_name IN UNNEST(@accounts)
-  GROUP BY 1,2,3,4
+  GROUP BY 1,2,3,4,5
   HAVING spend > 0 OR impressions > 0`;
 
 const Q_SERIE = `
@@ -74,7 +75,7 @@ async function run(query) {
     if (!h) continue;
     detalle.push({
       agencia: h.ag, pais: h.pais, cuenta: h.hom, ...pi(h.hom),
-      campana: r.campana || '(sin nombre)', plataforma: r.platform,
+      campana: r.campana || '(sin nombre)', plataforma: r.platform, mes: r.mes,
       objetivo: r.objetivo, inicio: dval(r.inicio), fin: dval(r.fin), last_spend: dval(r.last_spend),
       spend: num(r.spend), impressions: num(r.impressions), clicks: num(r.clicks),
       reach: num(r.reach), views: num(r.views), engagements: num(r.engagements), conversions: num(r.conversions),
