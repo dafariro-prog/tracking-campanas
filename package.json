@@ -5,6 +5,7 @@
   "description": "Dashboard de tracking diario de campañas (Shift PN, Garnier, PHD, Diageo, Loymark, Panama) sobre BigQuery",
   "scripts": {
     "refresh": "node refresh.js",
+    "analyze": "node analyze.js",
     "serve": "node server.js"
   },
   "dependencies": {

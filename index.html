@@ -85,6 +85,17 @@
   .sec-title{font-size:15px;font-weight:600;margin:6px 4px 14px;display:flex;align-items:center;gap:8px}
   .sec-title small{font-weight:500;color:var(--muted);font-size:12px}
 
+  .reco-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:16px;margin-bottom:20px}
+  .reco{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--line);border-radius:18px;padding:16px 18px;box-shadow:var(--shadow)}
+  .reco.alta{border-left-color:#EB3B38}.reco.media{border-left-color:#F6993E}.reco.baja{border-left-color:#AAAAAA}
+  .reco .r-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:7px}
+  .reco .r-camp{font-weight:600;font-size:13px;line-height:1.3}
+  .reco .r-prio{font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;padding:3px 8px;border-radius:6px;color:#fff;white-space:nowrap}
+  .reco .r-meta{font-size:11px;color:var(--muted);margin-bottom:10px;display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+  .reco .r-diag{font-size:12.5px;color:var(--txt);margin-bottom:9px}
+  .reco .r-rec{font-size:13px;font-weight:600;color:var(--txt);margin-bottom:6px}
+  .reco .r-imp{font-size:11.5px;color:var(--muted)}
+  .reco .r-imp b{color:#1DCB78;font-weight:600}
   .obj-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:16px;margin-bottom:20px}
   .obj{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:0;box-shadow:var(--shadow);overflow:hidden}
   .obj .o-head{padding:14px 16px;color:#fff;display:flex;justify-content:space-between;align-items:flex-start}
@@ -207,6 +218,9 @@
     </div>
   </div>
 
+  <div class="sec-title">🤖 Recomendaciones de optimización <small id="recoMeta"></small></div>
+  <div class="reco-grid" id="recoGrid"></div>
+
   <div class="sec-title">🎯 Desempeño por objetivo <small>· KPI clave y desglose por plataforma</small></div>
   <div class="obj-grid" id="objGrid"></div>
 
@@ -278,6 +292,7 @@ function copModeNow(){const e=document.getElementById('fPais');return !!(e&&e.va
 function convSpend(r){ if(copModeNow()) return r.spend; return r.pais==='Colombia'? r.spend/RATE_COP : r.spend; }
 const money=n=> copModeNow() ? '$'+fmt(n)+' COP' : '$'+fmt2(n);
 const pct=n=>(n*100).toFixed(2)+'%';
+const esc=s=>String(s||'').replace(/[<>&]/g,m=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[m]));
 
 // Estado de campaña: sin consumo por más de 5 días = finalizada
 const DIAS_INACTIVA=5;
@@ -310,6 +325,12 @@ async function boot(){
   if(!d.detalle.length){ document.getElementById('meta').textContent='No hay datos disponibles para tu acceso.'; return; }
   document.getElementById('meta').textContent =
     `Campañas ${d.rango.min} → ${d.rango.max} · serie diaria ${(d.rango_serie||d.rango).min} → ${(d.rango_serie||d.rango).max} · actualizado ${new Date(d.updated).toLocaleString('es')}`;
+  DATA.recos = await fetch('data/recommendations.json').then(r=>r.json()).catch(()=>({recomendaciones:[]}));
+  if(perm.rol!=='admin'){
+    const ags=perm.agencias||[], cts=perm.cuentas||[];
+    if((ags.length||cts.length) && DATA.recos.recomendaciones)
+      DATA.recos.recomendaciones = DATA.recos.recomendaciones.filter(r=>(!ags.length||ags.includes(r.agencia))&&(!cts.length||cts.includes(r.cuenta)));
+  }
   buildFilters(); render();
 }
 function applyScope(d,perm){
@@ -457,7 +478,7 @@ function lastSpendPorCampana(det){
 
 function render(){
   const rows=filtered(), det=detalleFiltered();
-  renderAcctHead(det); renderHero(det);
+  renderAcctHead(det); renderHero(det); renderRecos();
   renderLine(rows); renderPlat(det); renderObj(det); renderTable();
   document.getElementById('foot').textContent=
     `${new Set(det.map(r=>r.campana)).size} campañas · ${new Set(det.map(r=>r.plataforma)).size} plataformas · ${new Set(det.map(r=>r.objetivo)).size} objetivos · Fuente: vw_marketing_daily_campaign (BigQuery)`;
@@ -586,6 +607,32 @@ function renderObj(rows){
       </div>
     </div>`;
   }).join('');
+}
+
+function renderRecos(){
+  const recos=(DATA.recos&&DATA.recos.recomendaciones)||[];
+  const grid=document.getElementById('recoGrid'), meta=document.getElementById('recoMeta');
+  if(!recos.length){
+    meta.textContent='· aún no generadas';
+    grid.innerHTML='<div style="color:var(--muted);font-size:13px;padding:8px 4px">Las recomendaciones aparecerán aquí tras la primera corrida del agente (cada 24 h con Gemini).</div>';
+    return;
+  }
+  const a=V('fAgencia'), c=V('fCuenta'), p=V('fPais');
+  let filt=recos.filter(r=>(!a||r.agencia===a)&&(!c||r.cuenta===c)&&(!p||r.pais===p)&&
+    (r.objetivo==='General'||!TIPO_META[r.objetivo]||tipoSel.has(r.objetivo)));
+  const ord={alta:0,media:1,baja:2};
+  filt.sort((x,y)=>(ord[x.prioridad]??3)-(ord[y.prioridad]??3));
+  const PCOL={alta:'#EB3B38',media:'#F6993E',baja:'#AAAAAA'};
+  meta.textContent=`· ${filt.length} para tu selección · actualizado ${DATA.recos.updated?new Date(DATA.recos.updated).toLocaleDateString('es'):'—'}${DATA.recos.modelo?' · '+DATA.recos.modelo:''}`;
+  grid.innerHTML=filt.slice(0,60).map(r=>`
+    <div class="reco ${r.prioridad||'baja'}">
+      <div class="r-top"><span class="r-camp">${esc(r.campana||'General')}</span>
+        <span class="r-prio" style="background:${PCOL[r.prioridad]||'#999'}">${esc(r.prioridad||'')}</span></div>
+      <div class="r-meta"><span class="dot" style="background:${agHex(r.agencia)}"></span>${esc(r.cuenta)} · ${esc(r.pais)}${r.objetivo&&r.objetivo!=='General'?' · '+esc(r.objetivo):''}</div>
+      <div class="r-diag">${esc(r.diagnostico)}</div>
+      <div class="r-rec">💡 ${esc(r.recomendacion)}</div>
+      ${r.impacto?`<div class="r-imp">Impacto esperado: <b>${esc(r.impacto)}</b></div>`:''}
+    </div>`).join('');
 }
 
 // KPI aplicable según tipo de objetivo
