@@ -192,6 +192,8 @@
         <thead><tr>
           <th data-k="campana">Campaña</th>
           <th data-k="pais">País</th>
+          <th data-k="planner">Planner</th>
+          <th data-k="implementador">Implementador</th>
           <th data-k="tipo">Objetivo</th>
           <th data-k="activa">Estado</th>
           <th data-k="inicio">Inicio</th>
@@ -560,6 +562,8 @@ function renderTable(){
     return `<tr>
       <td><span class="dot" style="background:${agHex(o.agencia)};margin-right:6px" title="${o.agencia}"></span><span class="camp" title="${o.campana.replace(/"/g,'&quot;')}" style="display:inline-block;vertical-align:bottom">${trunc(o.campana,44)}</span></td>
       <td>${o.pais!=='—'?`<span class="pais-badge">${o.pais}</span>`:'—'}</td>
+      <td>${o.planner||'—'}</td>
+      <td>${o.implementador||'—'}</td>
       <td><span class="o-pill" style="background:${M.color}">${M.ico} ${o.tipo}</span></td>
       <td><span class="est ${o.activa?'activa':'fin'}">${o.activa?'● Activa':'○ Finalizada'}</span></td>
       <td>${fechaCorta(o.inicio)}</td>
