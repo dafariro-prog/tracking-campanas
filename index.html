@@ -14,22 +14,22 @@
     --bg:#f5f5f5; --card:#ffffff; --line:#e4e4e4; --txt:#151515; --muted:#6e6e6e;
     --accent:#151515;
     --awareness:#3A75EB; --trafico:#1DCB78; --views:#F6993E; --conversion:#EB3B38; --interaccion:#BD8AF2;
-    --shadow:0 1px 3px rgba(0,0,0,.05),0 6px 22px rgba(0,0,0,.05);
+    --shadow:0 1px 2px rgba(0,0,0,.04),0 10px 30px rgba(0,0,0,.06);
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:'DM Sans','Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--txt);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
   .wrap{max-width:1320px;margin:0 auto;padding:24px}
 
-  header{background:#151515;border-radius:16px;padding:20px 26px;color:#fff;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-bottom:20px}
+  header{background:#151515;border-radius:18px;padding:20px 26px;color:#fff;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-bottom:20px}
   header h1{font-size:22px;font-weight:600;letter-spacing:-.3px}
   header .sub{font-size:12.5px;opacity:.9;margin-top:3px}
   .logos{display:flex;gap:10px;align-items:center}
-  .brand-logo{background:#fff;border-radius:14px;padding:11px 20px;display:flex;align-items:center;gap:10px;box-shadow:0 6px 18px rgba(0,0,0,.18);min-height:58px}
+  .brand-logo{background:#fff;border-radius:18px;padding:11px 20px;display:flex;align-items:center;gap:10px;box-shadow:0 6px 18px rgba(0,0,0,.18);min-height:58px}
   .brand-logo img{height:36px;max-width:170px;object-fit:contain;display:block}
   .brand-logo .brand-name{font-weight:600;font-size:19px;color:#1a1f36;letter-spacing:-.3px}
   .brand-logo .brand-flag{font-size:30px;line-height:1}
 
-  .filters{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:18px;display:flex;flex-wrap:wrap;gap:18px;align-items:flex-end;box-shadow:var(--shadow)}
+  .filters{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:18px;display:flex;flex-wrap:wrap;gap:18px;align-items:flex-end;box-shadow:var(--shadow)}
   .fgroup{display:flex;flex-direction:column;gap:7px}
   .fgroup label{font-size:10.5px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.6px}
   select,input{background:#fff;border:1.5px solid var(--line);color:var(--txt);padding:9px 11px;border-radius:9px;font-size:13px;outline:none;transition:.15s}
@@ -40,14 +40,19 @@
   .chip.on{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 4px 12px rgba(0,0,0,.3)}
   .chip[data-tipo].on{box-shadow:none}
 
-  .acct-head{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 22px;margin-bottom:14px;box-shadow:var(--shadow);display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
+  .acct-head{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px 22px;margin-bottom:14px;box-shadow:var(--shadow);display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
+  .acct-head .a-left{display:flex;align-items:center;gap:14px}
+  .ag-logo{display:flex;align-items:center;justify-content:center;padding:6px 11px;background:#f5f5f5;border-radius:10px}
+  .ag-logo img{height:22px;display:block;max-width:120px;object-fit:contain}
+  .ag-logo.shift{background:#e11d28}
+  .ag-flag{font-size:28px;line-height:1}
   .acct-head .a-name{font-size:20px;font-weight:600;letter-spacing:-.3px}
   .acct-head .a-meta{font-size:12px;color:var(--muted);margin-top:3px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
   .acct-head .a-badge{font-size:12.5px;font-weight:600;padding:7px 15px;border-radius:22px;display:flex;align-items:center;gap:7px}
   .acct-head .a-badge .bdot{width:8px;height:8px;border-radius:50%;background:currentColor}
 
   .hero{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px;margin-bottom:20px}
-  .hcard{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px 22px;box-shadow:var(--shadow);position:relative}
+  .hcard{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px 22px;box-shadow:var(--shadow);position:relative}
   .hcard .h-label{font-size:12px;color:var(--muted);margin-bottom:12px;font-weight:600}
   .hcard .h-val{font-size:34px;font-weight:600;letter-spacing:-1.2px;line-height:1}
   .hcard .h-val small{font-size:15px;font-weight:600;color:var(--muted);letter-spacing:0}
@@ -60,7 +65,7 @@
   .pais-badge{font-size:10.5px;font-weight:600;background:#f0f0f0;color:#3D3D3D;padding:2px 8px;border-radius:6px}
 
   .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:14px;margin-bottom:18px}
-  .kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;position:relative;box-shadow:var(--shadow);overflow:hidden}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px 18px;position:relative;box-shadow:var(--shadow);overflow:hidden}
   .kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--accent);opacity:.0}
   .kpi.hot::before{opacity:1}
   .kpi .k-ico{font-size:18px;margin-bottom:8px;display:block}
@@ -71,7 +76,7 @@
   .kpi.hot .k-tag{position:absolute;top:10px;right:10px;font-size:8.5px;background:var(--accent);color:#fff;padding:3px 7px;border-radius:6px;font-weight:600;letter-spacing:.4px}
 
   .grid{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:18px}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:var(--shadow)}
   .card h3{font-size:14px;font-weight:600;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
   .card h3 .mini{display:flex;gap:5px}
   .mini .chip{padding:5px 10px;font-size:11px}
@@ -81,7 +86,7 @@
   .sec-title small{font-weight:500;color:var(--muted);font-size:12px}
 
   .obj-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:16px;margin-bottom:20px}
-  .obj{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:0;box-shadow:var(--shadow);overflow:hidden}
+  .obj{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:0;box-shadow:var(--shadow);overflow:hidden}
   .obj .o-head{padding:14px 16px;color:#fff;display:flex;justify-content:space-between;align-items:flex-start}
   .obj .o-head .o-name{font-size:13px;font-weight:600;display:flex;align-items:center;gap:7px}
   .obj .o-head .o-kpi{text-align:right}
@@ -112,6 +117,16 @@
   .note{background:#fff7e6;border:1px solid #ffe2a8;color:#8a6312;border-radius:11px;padding:11px 15px;font-size:12.5px;margin-bottom:18px}
   .note code{background:#ffedc4;padding:1px 5px;border-radius:4px}
   .foot{color:var(--muted);font-size:11px;text-align:center;margin-top:26px;padding-top:18px;border-top:1px solid var(--line)}
+  .topbar{background:#fff;border-radius:20px;padding:13px 22px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:12px;box-shadow:var(--shadow)}
+  .tb-left{display:flex;align-items:center;gap:14px}
+  .tb-logo{height:26px;display:block}
+  .tb-sep{width:1px;height:22px;background:var(--line)}
+  .tb-title{font-size:15px;font-weight:600;color:var(--txt)}
+  .tb-right{display:flex;align-items:center;gap:9px;font-size:12.5px;flex-wrap:wrap}
+  .pill-user{background:#f3f3f3;border-radius:22px;padding:8px 15px;font-weight:500;color:#3D3D3D}
+  .pill-dark{background:#151515;color:#fff;border-radius:22px;padding:8px 15px;font-weight:600;text-decoration:none}
+  .pill-out{background:#fff;border:1px solid var(--line);border-radius:22px;padding:8px 15px;font-weight:600;color:var(--txt);cursor:pointer}
+  .meta-line{font-size:11.5px;color:var(--muted);margin:0 6px 16px}
   .userbar{display:flex;justify-content:flex-end;align-items:center;gap:9px;font-size:12.5px;margin-bottom:10px}
   .userbar .uchip{background:#fff;border:1px solid var(--line);border-radius:20px;padding:6px 13px;font-weight:600;color:var(--txt)}
   .userbar a,.userbar button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;color:var(--txt)}
@@ -121,14 +136,15 @@
 </head>
 <body>
 <div class="wrap">
-  <div class="userbar" id="userBox"></div>
-  <header>
-    <div>
-      <h1>📈 Tracking de Campañas</h1>
-      <div class="sub" id="meta">Cargando…</div>
+  <div class="topbar">
+    <div class="tb-left">
+      <img class="tb-logo" src="assets/garnier_brand_black.png" alt="Garnier">
+      <span class="tb-sep"></span>
+      <span class="tb-title">Tracking de Campañas</span>
     </div>
-    <div class="logos" id="logos"></div>
-  </header>
+    <div class="tb-right" id="userBox"></div>
+  </div>
+  <div class="meta-line" id="meta">Cargando…</div>
 
   <div class="filters">
     <div class="fgroup">
@@ -305,31 +321,18 @@ function applyScope(d,perm){
 }
 function renderUserBox(email,perm){
   document.getElementById('userBox').innerHTML=
-    `<span class="uchip">👤 ${email} · ${perm.rol}</span>`+
-    (perm.rol==='admin'?`<a class="admin" href="admin.html">⚙️ Administrar</a>`:'')+
-    `<button onclick="sb.auth.signOut().then(()=>location.replace('login.html'))">Salir</button>`;
+    `<span class="pill-user">👤 ${email}</span>`+
+    (perm.rol==='admin'?`<a class="pill-dark" href="admin.html">⚙️ Admin</a>`:'')+
+    `<button class="pill-out" onclick="sb.auth.signOut().then(()=>location.replace('login.html'))">Salir</button>`;
 }
 boot();
 
-// Logo según la agencia seleccionada; sin selección -> marca Garnier
-function renderLogo(){
-  const a=document.getElementById('fAgencia').value;
-  const box=document.getElementById('logos'); box.innerHTML='';
-  if(!a){  // sin selección -> marca Garnier oficial (blanca sobre header oscuro)
-    box.innerHTML='<img src="assets/garnier_brand_white.png" alt="Garnier" style="height:30px;display:block">';
-    return;
-  }
-  const div=document.createElement('div'); div.className='brand-logo';
-  const BG={'Shift PN':'#e11d28'};  // Shift es blanco -> fondo rojo
-  if(BG[a]) div.style.background=BG[a];
-  if(LOGO_IMG[a]){
-    div.innerHTML=`<img src="assets/${LOGO_IMG[a]}.png" alt="${a}" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'brand-name',textContent:'${a}'}))">`;
-  } else if(FLAG[a]){
-    div.innerHTML=`<span class="brand-flag">${FLAG[a]}</span><span class="brand-name">${a}</span>`;
-  } else {
-    div.innerHTML=`<span class="brand-name">${a}</span>`;
-  }
-  box.appendChild(div);
+// Logo de la agencia seleccionada (se muestra dentro de la tarjeta de cuenta)
+function agencyLogoHTML(a){
+  if(!a) return '';
+  if(LOGO_IMG[a]) return `<span class="ag-logo${a==='Shift PN'?' shift':''}"><img src="assets/${LOGO_IMG[a]}.png" alt="${a}"></span>`;
+  if(FLAG[a]) return `<span class="ag-flag">${FLAG[a]}</span>`;
+  return '';
 }
 
 function buildFilters(){
@@ -454,7 +457,7 @@ function lastSpendPorCampana(det){
 
 function render(){
   const rows=filtered(), det=detalleFiltered();
-  renderLogo(); renderAcctHead(det); renderHero(det);
+  renderAcctHead(det); renderHero(det);
   renderLine(rows); renderPlat(det); renderObj(det); renderTable();
   document.getElementById('foot').textContent=
     `${new Set(det.map(r=>r.campana)).size} campañas · ${new Set(det.map(r=>r.plataforma)).size} plataformas · ${new Set(det.map(r=>r.objetivo)).size} objetivos · Fuente: vw_marketing_daily_campaign (BigQuery)`;
@@ -473,12 +476,15 @@ function renderAcctHead(det){
   const paises=[...new Set(det.map(r=>r.pais))];
   const pais=paises.length===1?paises[0]:(paises.length>1?paises.length+' países':'');
   document.getElementById('acctHead').innerHTML=`
-    <div>
-      <div class="a-name">${name}</div>
-      <div class="a-meta">
-        ${a?`<span>🏢 ${a}</span>`:'<span>🏢 Todas las agencias</span>'}
-        ${pais?`<span class="pais-badge">${pais}</span>`:''}
-        <span>· ${activas}/${total} campañas activas</span>
+    <div class="a-left">
+      ${agencyLogoHTML(a)}
+      <div>
+        <div class="a-name">${name}</div>
+        <div class="a-meta">
+          ${a?`<span>${a}</span>`:'<span>Todas las agencias</span>'}
+          ${pais?`<span class="pais-badge">${pais}</span>`:''}
+          <span>· ${activas}/${total} campañas activas</span>
+        </div>
       </div>
     </div>
     <div class="a-badge" style="color:${col};background:${bg}"><span class="bdot"></span>${st}</div>`;
