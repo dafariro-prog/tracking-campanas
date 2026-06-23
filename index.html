@@ -136,6 +136,22 @@
       <label>Cuenta</label>
       <select id="fCuenta"></select>
     </div>
+    <div class="fgroup">
+      <label>Estado</label>
+      <select id="fEstado">
+        <option value="">Todos</option>
+        <option value="act">Activas</option>
+        <option value="fin">Finalizadas</option>
+      </select>
+    </div>
+    <div class="fgroup" id="gPlanner" style="display:none">
+      <label>Planner</label>
+      <select id="fPlanner"></select>
+    </div>
+    <div class="fgroup" id="gImplementador" style="display:none">
+      <label>Implementador</label>
+      <select id="fImplementador"></select>
+    </div>
     <div class="fgroup" style="min-width:200px">
       <label>Plataforma</label>
       <div class="chips" id="fPlat"></div>
@@ -145,12 +161,12 @@
       <div class="chips" id="fObj"></div>
     </div>
     <div class="fgroup">
-      <label>Desde</label>
-      <input type="date" id="fDesde">
+      <label>Año</label>
+      <select id="fAnio"></select>
     </div>
     <div class="fgroup">
-      <label>Hasta</label>
-      <input type="date" id="fHasta">
+      <label>Mes</label>
+      <select id="fMes"></select>
     </div>
   </div>
 
@@ -239,6 +255,7 @@ const DIAS_INACTIVA=5;
 function daysBefore(dstr,n){const d=new Date(dstr+'T00:00:00');d.setDate(d.getDate()-n);return d.toISOString().slice(0,10);}
 function fechaCorta(dstr){if(!dstr)return '—';const [y,m,d]=dstr.split('-');return `${d}/${m}/${y.slice(2)}`;}
 const esActiva=r=> !!r.last_spend && r.last_spend>=DATA._thr;
+const MES_NOMBRES={'01':'Enero','02':'Febrero','03':'Marzo','04':'Abril','05':'Mayo','06':'Junio','07':'Julio','08':'Agosto','09':'Septiembre','10':'Octubre','11':'Noviembre','12':'Diciembre'};
 // Logos: imagen en assets/ para las que la tienen; Panama=bandera; PHD/Diageo=texto
 const LOGO_IMG={'Shift PN':'shift','Garnier':'garnier','Loymark':'loymark'};
 const FLAG={'Panama':'🇵🇦'};
@@ -250,8 +267,7 @@ fetch('data/tracking.json').then(r=>r.json()).then(d=>{
   document.getElementById('meta').textContent =
     `Campañas ${d.rango.min} → ${d.rango.max} · serie diaria ${(d.rango_serie||d.rango).min} → ${(d.rango_serie||d.rango).max} · actualizado ${new Date(d.updated).toLocaleString('es')}`;
   document.getElementById('mvpNote').innerHTML =
-    'ℹ️ <b>Datos reales</b> de BigQuery cruzados con tu tabla de homologación · gasto en moneda nativa sin convertir · '+
-    'estado de campaña con referencia '+DATA._ref+' (regla: >5 días sin consumo = finalizada).';
+    'ℹ️ <b>Datos reales</b> de BigQuery cruzados con tu tabla de homologación · gasto en moneda nativa sin convertir.';
   buildFilters(); render();
 });
 
@@ -260,6 +276,8 @@ function renderLogo(){
   const a=document.getElementById('fAgencia').value;
   const box=document.getElementById('logos'); box.innerHTML='';
   const div=document.createElement('div'); div.className='brand-logo';
+  const BG={'Shift PN':'#e11d28'};  // Shift es blanco -> fondo rojo
+  if(BG[a]) div.style.background=BG[a];
   if(!a || LOGO_IMG[a]){
     const file=a?LOGO_IMG[a]:'garnier';
     div.innerHTML=`<img src="assets/${file}.png" alt="${a||'Garnier'}" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'brand-name',textContent:'${a||'Garnier'}'}))">`;
@@ -307,11 +325,19 @@ function buildFilters(){
     oc.appendChild(c);
   });
 
-  const rs=DATA.rango_serie||DATA.rango;
-  document.getElementById('fDesde').value=rs.min;
-  document.getElementById('fHasta').value=rs.max;
-  document.getElementById('fDesde').onchange=render;
-  document.getElementById('fHasta').onchange=render;
+  // Año y Mes (sobre la serie diaria)
+  const anios=[...new Set(DATA.rows.map(r=>r.date.slice(0,4)))].sort();
+  document.getElementById('fAnio').innerHTML='<option value="">Todos</option>'+anios.map(y=>`<option>${y}</option>`).join('');
+  const meses=[...new Set(DATA.rows.map(r=>r.date.slice(5,7)))].sort();
+  document.getElementById('fMes').innerHTML='<option value="">Todos</option>'+meses.map(m=>`<option value="${m}">${MES_NOMBRES[m]}</option>`).join('');
+  document.getElementById('fAnio').onchange=render;
+  document.getElementById('fMes').onchange=render;
+
+  document.getElementById('fEstado').onchange=render;
+
+  // Planner / Implementador (solo si el dato ya trae esas columnas)
+  setupPlannerFilters();
+
   fillCuentas();
 
   const mt=document.getElementById('metricToggle');
@@ -324,6 +350,21 @@ function buildFilters(){
   document.querySelectorAll('#tbl th').forEach(th=>{
     th.onclick=()=>{const k=th.dataset.k;sortDir=(sortK===k)?-sortDir:-1;sortK=k;render();};
   });
+}
+
+function setupPlannerFilters(){
+  const has = DATA.detalle.length && ('planner' in DATA.detalle[0]);
+  document.getElementById('gPlanner').style.display = has?'flex':'none';
+  document.getElementById('gImplementador').style.display = has?'flex':'none';
+  if(!has) return;
+  const fill=(field,selId)=>{
+    const vals=[...new Set(DATA.detalle.map(r=>r[field]).filter(Boolean))].sort();
+    const sel=document.getElementById(selId);
+    sel.innerHTML='<option value="">Todos</option>'+vals.map(v=>`<option>${v}</option>`).join('');
+    sel.onchange=render;
+  };
+  fill('planner','fPlanner');
+  fill('implementador','fImplementador');
 }
 
 function fillPaises(){
@@ -340,19 +381,25 @@ function fillCuentas(){
   sel.onchange=render;
 }
 
+const V=id=>document.getElementById(id).value;
+
 function filtered(){
-  // Serie diaria (no trae objetivo): filtra por agencia, país, cuenta, plataforma y fecha
-  const a=document.getElementById('fAgencia').value, c=document.getElementById('fCuenta').value, p=document.getElementById('fPais').value;
-  const d1=document.getElementById('fDesde').value, d2=document.getElementById('fHasta').value;
+  // Serie diaria (no trae objetivo ni estado): agencia, país, cuenta, planner, plataforma, año, mes
+  const a=V('fAgencia'), c=V('fCuenta'), p=V('fPais'), pl=V('fPlanner'), im=V('fImplementador'), yr=V('fAnio'), mo=V('fMes');
   return DATA.rows.filter(r=>
-    (!a||r.agencia===a)&&(!c||r.cuenta===c)&&(!p||r.pais===p)&&platSel.has(r.plataforma)&&r.date>=d1&&r.date<=d2);
+    (!a||r.agencia===a)&&(!c||r.cuenta===c)&&(!p||r.pais===p)&&
+    (!pl||r.planner===pl)&&(!im||r.implementador===im)&&platSel.has(r.plataforma)&&
+    (!yr||r.date.slice(0,4)===yr)&&(!mo||r.date.slice(5,7)===mo));
 }
 const sum=(arr,k)=>arr.reduce((s,r)=>s+r[k],0);
 
 function detalleFiltered(){
-  const a=document.getElementById('fAgencia').value, c=document.getElementById('fCuenta').value, p=document.getElementById('fPais').value;
+  const a=V('fAgencia'), c=V('fCuenta'), p=V('fPais'), est=V('fEstado'), pl=V('fPlanner'), im=V('fImplementador');
   return (DATA.detalle||[]).filter(r=>
-    (!a||r.agencia===a)&&(!c||r.cuenta===c)&&(!p||r.pais===p)&&platSel.has(r.plataforma)&&tipoSel.has(tipoDe(r.objetivo)));
+    (!a||r.agencia===a)&&(!c||r.cuenta===c)&&(!p||r.pais===p)&&
+    platSel.has(r.plataforma)&&tipoSel.has(tipoDe(r.objetivo))&&
+    (!est || (est==='act'?esActiva(r):!esActiva(r)))&&
+    (!pl||r.planner===pl)&&(!im||r.implementador===im));
 }
 // última fecha con consumo por campaña (para estado a nivel campaña)
 function lastSpendPorCampana(det){
