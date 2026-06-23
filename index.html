@@ -29,8 +29,11 @@
   .brand-logo .brand-name{font-weight:600;font-size:19px;color:#1a1f36;letter-spacing:-.3px}
   .brand-logo .brand-flag{font-size:30px;line-height:1}
 
-  .filters{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:18px;display:flex;flex-wrap:wrap;gap:18px;align-items:flex-end;box-shadow:var(--shadow)}
-  .fgroup{display:flex;flex-direction:column;gap:7px}
+  .filters{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;margin-bottom:18px;box-shadow:var(--shadow)}
+  .filters-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:14px 16px}
+  .filters-chips{display:flex;flex-wrap:wrap;gap:14px 28px;margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
+  .filters select{width:100%}
+  .fgroup{display:flex;flex-direction:column;gap:7px;min-width:0}
   .fgroup label{font-size:10.5px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.6px}
   select,input{background:#fff;border:1.5px solid var(--line);color:var(--txt);padding:9px 11px;border-radius:9px;font-size:13px;outline:none;transition:.15s}
   select:focus,input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,0,0,.12)}
@@ -171,53 +174,22 @@
   <div class="meta-line" id="meta">Cargando…</div>
 
   <div class="filters">
-    <div class="fgroup">
-      <label>Agencia</label>
-      <select id="fAgencia"></select>
+    <div class="filters-grid">
+      <div class="fgroup"><label>Agencia</label><select id="fAgencia"></select></div>
+      <div class="fgroup"><label>País</label><select id="fPais"></select></div>
+      <div class="fgroup"><label>Cuenta</label><select id="fCuenta"></select></div>
+      <div class="fgroup" id="gAccount" style="display:none"><label>Account name</label><select id="fAccount"></select></div>
+      <div class="fgroup" id="gPlanner" style="display:none"><label>Planner</label><select id="fPlanner"></select></div>
+      <div class="fgroup" id="gImplementador" style="display:none"><label>Implementador</label><select id="fImplementador"></select></div>
+      <div class="fgroup"><label>Estado</label><select id="fEstado">
+        <option value="">Todos</option><option value="act">Activas</option><option value="fin">Finalizadas</option>
+      </select></div>
+      <div class="fgroup"><label>Año</label><select id="fAnio"></select></div>
+      <div class="fgroup"><label>Mes</label><select id="fMes"></select></div>
     </div>
-    <div class="fgroup">
-      <label>País</label>
-      <select id="fPais"></select>
-    </div>
-    <div class="fgroup">
-      <label>Cuenta</label>
-      <select id="fCuenta"></select>
-    </div>
-    <div class="fgroup" id="gAccount" style="display:none">
-      <label>Account name</label>
-      <select id="fAccount"></select>
-    </div>
-    <div class="fgroup">
-      <label>Estado</label>
-      <select id="fEstado">
-        <option value="">Todos</option>
-        <option value="act">Activas</option>
-        <option value="fin">Finalizadas</option>
-      </select>
-    </div>
-    <div class="fgroup" id="gPlanner" style="display:none">
-      <label>Planner</label>
-      <select id="fPlanner"></select>
-    </div>
-    <div class="fgroup" id="gImplementador" style="display:none">
-      <label>Implementador</label>
-      <select id="fImplementador"></select>
-    </div>
-    <div class="fgroup" style="min-width:200px">
-      <label>Plataforma</label>
-      <div class="chips" id="fPlat"></div>
-    </div>
-    <div class="fgroup" style="min-width:260px">
-      <label>Objetivo</label>
-      <div class="chips" id="fObj"></div>
-    </div>
-    <div class="fgroup">
-      <label>Año</label>
-      <select id="fAnio"></select>
-    </div>
-    <div class="fgroup">
-      <label>Mes</label>
-      <select id="fMes"></select>
+    <div class="filters-chips">
+      <div class="fgroup"><label>Plataforma</label><div class="chips" id="fPlat"></div></div>
+      <div class="fgroup"><label>Objetivo</label><div class="chips" id="fObj"></div></div>
     </div>
   </div>
 
