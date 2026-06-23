@@ -52,8 +52,11 @@
         options:{ emailRedirectTo: location.origin + location.pathname.replace(/login\.html$/,'') + 'index.html' }
       });
       btn.disabled=false; btn.textContent='Enviar enlace de acceso';
-      if(error) msg('No se pudo enviar: '+error.message,'err');
-      else msg('✉️ Revisa tu correo ('+email+') y abre el enlace para entrar.','ok');
+      if(error){
+        console.error('OTP error', error);
+        const detalle = error.message || error.error_description || error.msg || JSON.stringify(error);
+        msg('No se pudo enviar: '+detalle+(error.status?' (status '+error.status+')':''),'err');
+      } else msg('✉️ Revisa tu correo ('+email+') y abre el enlace para entrar.','ok');
     });
   </script>
 </body>
