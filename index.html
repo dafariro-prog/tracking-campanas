@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tracking de Campañas · Grupo Garnier</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
 <style>
   :root{
     --bg:#f4f6fb; --card:#ffffff; --line:#e7eaf3; --txt:#1a1f36; --muted:#7b8499;
@@ -108,11 +110,16 @@
   .note{background:#fff7e6;border:1px solid #ffe2a8;color:#8a6312;border-radius:11px;padding:11px 15px;font-size:12.5px;margin-bottom:18px}
   .note code{background:#ffedc4;padding:1px 5px;border-radius:4px}
   .foot{color:var(--muted);font-size:11px;text-align:center;margin-top:26px;padding-top:18px;border-top:1px solid var(--line)}
+  .userbar{display:flex;justify-content:flex-end;align-items:center;gap:9px;font-size:12.5px;margin-bottom:10px}
+  .userbar .uchip{background:#fff;border:1px solid var(--line);border-radius:20px;padding:6px 13px;font-weight:600;color:var(--txt)}
+  .userbar a,.userbar button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;color:var(--txt)}
+  .userbar a.admin{background:var(--accent);color:#fff;border-color:var(--accent)}
   @media(max-width:860px){.grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <div class="wrap">
+  <div class="userbar" id="userBox"></div>
   <header>
     <div>
       <h1>📈 Tracking de Campañas</h1>
@@ -264,14 +271,43 @@ const MES_NOMBRES={'01':'Enero','02':'Febrero','03':'Marzo','04':'Abril','05':'M
 const LOGO_IMG={'Shift PN':'shift','Garnier':'garnier','Loymark':'loymark'};
 const FLAG={'Panama':'🇵🇦'};
 
-fetch('data/tracking.json').then(r=>r.json()).then(d=>{
+let SCOPE=null;
+async function boot(){
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session){ location.replace('login.html'); return; }
+  const email=session.user.email.toLowerCase();
+  const {data:perm}=await sb.from('permisos').select('*').eq('email',email).maybeSingle();
+  if(!perm){
+    document.body.innerHTML='<div style="font-family:system-ui,sans-serif;padding:50px;max-width:560px;margin:40px auto;color:#1a1f36">'+
+      '<h2>Sin acceso</h2><p style="margin-top:10px">Tu correo <b>'+email+'</b> no está autorizado todavía. Pide a un administrador que te agregue.</p>'+
+      '<p style="margin-top:16px"><a href="#" onclick="sb.auth.signOut().then(()=>location.replace(\'login.html\'));return false">Cerrar sesión</a></p></div>';
+    return;
+  }
+  SCOPE=perm; renderUserBox(email,perm);
+  const d=await (await fetch('data/tracking.json')).json();
+  applyScope(d,perm);
   DATA=d;
   DATA._ref=(d.detalle||[]).reduce((m,r)=>(r.last_spend&&r.last_spend>m)?r.last_spend:m,'0000-00-00');
   DATA._thr=daysBefore(DATA._ref,DIAS_INACTIVA);
+  if(!d.detalle.length){ document.getElementById('meta').textContent='No hay datos disponibles para tu acceso.'; return; }
   document.getElementById('meta').textContent =
     `Campañas ${d.rango.min} → ${d.rango.max} · serie diaria ${(d.rango_serie||d.rango).min} → ${(d.rango_serie||d.rango).max} · actualizado ${new Date(d.updated).toLocaleString('es')}`;
   buildFilters(); render();
-});
+}
+function applyScope(d,perm){
+  if(perm.rol==='admin') return;
+  const ags=perm.agencias||[], cts=perm.cuentas||[];
+  if(!ags.length && !cts.length) return;  // usuario general: ve todo
+  const ok=r=> (!ags.length||ags.includes(r.agencia)) && (!cts.length||cts.includes(r.cuenta));
+  d.detalle=d.detalle.filter(ok); d.rows=d.rows.filter(ok);
+}
+function renderUserBox(email,perm){
+  document.getElementById('userBox').innerHTML=
+    `<span class="uchip">👤 ${email} · ${perm.rol}</span>`+
+    (perm.rol==='admin'?`<a class="admin" href="admin.html">⚙️ Administrar</a>`:'')+
+    `<button onclick="sb.auth.signOut().then(()=>location.replace('login.html'))">Salir</button>`;
+}
+boot();
 
 // Logo según la agencia seleccionada; sin selección -> marca Garnier
 function renderLogo(){
