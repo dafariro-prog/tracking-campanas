@@ -75,7 +75,7 @@ async function run(query) {
     if (!h) continue;
     detalle.push({
       agencia: h.ag, pais: h.pais, cuenta: h.hom, ...pi(h.hom),
-      campana: r.campana || '(sin nombre)', plataforma: r.platform, mes: r.mes,
+      account_name: r.account_name, campana: r.campana || '(sin nombre)', plataforma: r.platform, mes: r.mes,
       objetivo: r.objetivo, inicio: dval(r.inicio), fin: dval(r.fin), last_spend: dval(r.last_spend),
       spend: num(r.spend), impressions: num(r.impressions), clicks: num(r.clicks),
       reach: num(r.reach), views: num(r.views), engagements: num(r.engagements), conversions: num(r.conversions),
@@ -87,7 +87,7 @@ async function run(query) {
     const h = lookup[r.platform + '||' + r.account_name];
     if (!h) continue;
     rows.push({
-      date: dval(r.date), agencia: h.ag, pais: h.pais, cuenta: h.hom, ...pi(h.hom), plataforma: r.platform,
+      date: dval(r.date), agencia: h.ag, pais: h.pais, cuenta: h.hom, ...pi(h.hom), account_name: r.account_name, plataforma: r.platform,
       spend: num(r.spend), impressions: num(r.impressions), clicks: num(r.clicks),
       views: num(r.views), conversions: num(r.conversions),
     });

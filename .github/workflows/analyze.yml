@@ -45,5 +45,7 @@ jobs:
             echo "Sin cambios en recomendaciones."
           else
             git commit -m "chore: recomendaciones $(date -u +%Y-%m-%d)"
-            git push
+            for i in 1 2 3; do
+              git pull --rebase --autostash -X ours origin main && git push && break || { echo "reintento $i"; sleep 4; }
+            done
           fi

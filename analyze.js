@@ -155,11 +155,12 @@ async function callGemini(prompt) {
       const bq = new BigQuery({ projectId: BQ_PROJECT });
       await bq.query(`CREATE TABLE IF NOT EXISTS \`${BQ_PROJECT}.${BQ_DATASET}.${BQ_TABLE}\` (
         run_ts TIMESTAMP, modelo STRING, agencia STRING, pais STRING, cuenta STRING,
-        campana STRING, objetivo STRING, prioridad STRING,
+        campana STRING, objetivo STRING, prioridad STRING, titulo STRING,
         diagnostico STRING, recomendacion STRING, impacto STRING )`);
+      await bq.query(`ALTER TABLE \`${BQ_PROJECT}.${BQ_DATASET}.${BQ_TABLE}\` ADD COLUMN IF NOT EXISTS titulo STRING`);
       const rows = recomendaciones.map(r => ({
         run_ts: runTs, modelo: MODEL, agencia: r.agencia, pais: r.pais, cuenta: r.cuenta,
-        campana: r.campana, objetivo: r.objetivo, prioridad: r.prioridad,
+        campana: r.campana, objetivo: r.objetivo, prioridad: r.prioridad, titulo: r.titulo,
         diagnostico: r.diagnostico, recomendacion: r.recomendacion, impacto: r.impacto,
       }));
       await bq.dataset(BQ_DATASET).table(BQ_TABLE).insert(rows);

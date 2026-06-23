@@ -174,6 +174,10 @@
       <label>Cuenta</label>
       <select id="fCuenta"></select>
     </div>
+    <div class="fgroup" id="gAccount" style="display:none">
+      <label>Account name</label>
+      <select id="fAccount"></select>
+    </div>
     <div class="fgroup">
       <label>Estado</label>
       <select id="fEstado">
@@ -220,6 +224,11 @@
       <h3>Inversión por plataforma</h3>
       <canvas id="platChart"></canvas>
     </div>
+  </div>
+
+  <div class="card" style="margin-bottom:18px">
+    <h3>Consumo diario por plataforma <small style="font-weight:500;color:var(--muted);font-size:12px">· gasto apilado</small></h3>
+    <canvas id="spendPlatChart"></canvas>
   </div>
 
   <div class="sec-title">🤖 Recomendaciones de optimización <small id="recoMeta"></small></div>
@@ -286,7 +295,7 @@ const PAIRS=[
 ];
 
 let DATA={rows:[]}, platSel=new Set(), tipoSel=new Set();
-let lineChart, platChart, sortK='spend', sortDir=-1;
+let lineChart, platChart, spendPlatChart, sortK='spend', sortDir=-1;
 
 function fmt(n){return new Intl.NumberFormat('es').format(Math.round(n));}
 function fmt2(n){return new Intl.NumberFormat('es',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n);}
@@ -364,10 +373,10 @@ function buildFilters(){
   const ag=document.getElementById('fAgencia');
   ag.innerHTML='<option value="">Todas las agencias</option>'+
     [...new Set(DATA.detalle.map(r=>r.agencia))].sort().map(a=>`<option>${a}</option>`).join('');
-  ag.onchange=()=>{fillPaises();fillCuentas();render();};
+  ag.onchange=()=>{fillPaises();fillCuentas();fillAccounts();render();};
 
   const pais=document.getElementById('fPais');
-  pais.onchange=()=>{fillCuentas();render();};
+  pais.onchange=()=>{fillCuentas();fillAccounts();render();};
   fillPaises();
 
   const plats=[...new Set(DATA.detalle.map(r=>r.plataforma))].sort();
@@ -412,7 +421,7 @@ function buildFilters(){
   // Planner / Implementador (solo si el dato ya trae esas columnas)
   setupPlannerFilters();
 
-  fillCuentas();
+  fillCuentas(); fillAccounts();
 
   const mt=document.getElementById('metricToggle');
   PAIRS.forEach((P,i)=>{
@@ -452,6 +461,16 @@ function fillCuentas(){
   const cuentas=[...new Set(DATA.detalle.filter(r=>(!a||r.agencia===a)&&(!p||r.pais===p)).map(r=>r.cuenta))].sort();
   const sel=document.getElementById('fCuenta'); const cur=sel.value;
   sel.innerHTML='<option value="">Todas las cuentas</option>'+cuentas.map(c=>`<option ${c===cur?'selected':''}>${c}</option>`).join('');
+  sel.onchange=()=>{fillAccounts();render();};
+}
+function fillAccounts(){
+  const g=document.getElementById('gAccount');
+  if(!DATA.detalle.some(r=>r.account_name)){ g.style.display='none'; return; }
+  g.style.display='flex';
+  const a=V('fAgencia'), p=V('fPais'), c=V('fCuenta');
+  const accs=[...new Set(DATA.detalle.filter(r=>(!a||r.agencia===a)&&(!p||r.pais===p)&&(!c||r.cuenta===c)).map(r=>r.account_name).filter(Boolean))].sort();
+  const sel=document.getElementById('fAccount'), cur=sel.value;
+  sel.innerHTML='<option value="">Todos</option>'+accs.map(x=>`<option ${x===cur?'selected':''}>${esc(x)}</option>`).join('');
   sel.onchange=render;
 }
 
@@ -459,9 +478,9 @@ const V=id=>document.getElementById(id).value;
 
 function filtered(){
   // Serie diaria (no trae objetivo ni estado): agencia, país, cuenta, planner, plataforma, año, mes
-  const a=V('fAgencia'), c=V('fCuenta'), p=V('fPais'), pl=V('fPlanner'), im=V('fImplementador'), yr=V('fAnio'), mo=V('fMes');
+  const a=V('fAgencia'), c=V('fCuenta'), p=V('fPais'), ac=V('fAccount'), pl=V('fPlanner'), im=V('fImplementador'), yr=V('fAnio'), mo=V('fMes');
   return DATA.rows.filter(r=>
-    (!a||r.agencia===a)&&(!c||r.cuenta===c)&&(!p||r.pais===p)&&
+    (!a||r.agencia===a)&&(!c||r.cuenta===c)&&(!p||r.pais===p)&&(!ac||r.account_name===ac)&&
     (!pl||r.planner===pl)&&(!im||r.implementador===im)&&platSel.has(r.plataforma)&&
     (!yr||r.date.slice(0,4)===yr)&&(!mo||r.date.slice(5,7)===mo))
     .map(r=>({...r, spend:convSpend(r)}));
@@ -469,9 +488,9 @@ function filtered(){
 const sum=(arr,k)=>arr.reduce((s,r)=>s+r[k],0);
 
 function detalleFiltered(){
-  const a=V('fAgencia'), c=V('fCuenta'), p=V('fPais'), est=V('fEstado'), pl=V('fPlanner'), im=V('fImplementador'), yr=V('fAnio'), mo=V('fMes');
+  const a=V('fAgencia'), c=V('fCuenta'), p=V('fPais'), ac=V('fAccount'), est=V('fEstado'), pl=V('fPlanner'), im=V('fImplementador'), yr=V('fAnio'), mo=V('fMes');
   return (DATA.detalle||[]).filter(r=>
-    (!a||r.agencia===a)&&(!c||r.cuenta===c)&&(!p||r.pais===p)&&
+    (!a||r.agencia===a)&&(!c||r.cuenta===c)&&(!p||r.pais===p)&&(!ac||r.account_name===ac)&&
     platSel.has(r.plataforma)&&tipoSel.has(tipoDe(r.objetivo))&&
     (!est || (est==='act'?esActiva(r):!esActiva(r)))&&
     (!pl||r.planner===pl)&&(!im||r.implementador===im)&&
@@ -487,7 +506,7 @@ function lastSpendPorCampana(det){
 function render(){
   const rows=filtered(), det=detalleFiltered();
   renderAcctHead(det); renderHero(det); renderRecos();
-  renderLine(rows); renderPlat(det); renderObj(det); renderTable();
+  renderLine(rows); renderSpendPlat(rows); renderPlat(det); renderObj(det); renderTable();
   document.getElementById('foot').textContent=
     `${new Set(det.map(r=>r.campana)).size} campañas · ${new Set(det.map(r=>r.plataforma)).size} plataformas · ${new Set(det.map(r=>r.objetivo)).size} objetivos · Fuente: vw_marketing_daily_campaign (BigQuery)`;
 }
@@ -569,6 +588,21 @@ function renderLine(rows){
            grid:{display:false},title:{display:true,text:P.kpiLabel,color:P.color,font:{size:10}}}
       }}});
 }
+function renderSpendPlat(rows){
+  const plats=[...new Set(rows.map(r=>r.plataforma))].sort();
+  const dates=[...new Set(rows.map(r=>r.date))].sort();
+  const md={}; rows.forEach(r=>{ (md[r.date]=md[r.date]||{})[r.plataforma]=(md[r.date][r.plataforma]||0)+r.spend; });
+  const datasets=plats.map(pl=>({label:pl,data:dates.map(d=>(md[d]&&md[d][pl])||0),backgroundColor:PLAT_HEX[pl]||'#999',stack:'s',borderRadius:2}));
+  spendPlatChart&&spendPlatChart.destroy();
+  spendPlatChart=new Chart(document.getElementById('spendPlatChart'),{type:'bar',
+    data:{labels:dates,datasets},
+    options:{responsive:true,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{position:'bottom',labels:{color:'#6e6e6e',font:{size:11},usePointStyle:true,padding:12}},
+        tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${money(c.parsed.y)}`}}},
+      scales:{x:{stacked:true,ticks:{color:'#6e6e6e',maxTicksLimit:8},grid:{display:false}},
+              y:{stacked:true,beginAtZero:true,ticks:{color:'#6e6e6e',callback:v=>'$'+fmt(v)},grid:{color:'#eef1f7'}}}}});
+}
+
 function renderPlat(rows){
   const m={}; rows.forEach(r=>{m[r.plataforma]=(m[r.plataforma]||0)+r.spend;});
   const labels=Object.keys(m).sort((a,b)=>m[b]-m[a]);
