@@ -53,6 +53,7 @@ Principios obligatorios:
 - Usa el KPI correcto según el objetivo: Awareness→CPM y alcance; Tráfico→CPC y CTR; Views→CPV; Conversión→CPA y conversiones; Interacción→CPE.
 - Enmarca los cambios como hipótesis testeables, no órdenes. Justifica con datos.
 - Sé concreto, accionable y breve. Responde en español.
+- FORMATO DE INSIGHT ACCIONABLE: cada recomendación tiene un "titulo" que es UNA frase, en imperativo (empieza con verbo), específica y con la métrica/señal clave — es el insight que se lee de un vistazo. Luego "diagnostico" (el porqué con datos), "recomendacion" (el cómo concreto) e "impacto" (resultado esperado). El título NO debe ser genérico ("Optimizar la campaña"); debe decir qué hacer y por qué en una línea.
 Limitaciones de los datos: son agregados a nivel campaña de los últimos 90 días (sin nivel ad set, sin diagnósticos de relevancia ni eventos de fase de aprendizaje). No inventes métricas que no estén. El gasto está en moneda nativa (Colombia en COP, el resto USD).`;
 
 const schema = {
@@ -63,10 +64,11 @@ const schema = {
       campana:{type:'string'},
       objetivo:{type:'string', enum:['Awareness','Tráfico','Views','Conversión','Interacción','General']},
       prioridad:{type:'string', enum:['alta','media','baja']},
-      diagnostico:{type:'string'},
-      recomendacion:{type:'string'},
-      impacto:{type:'string'}
-    }, required:['campana','objetivo','prioridad','diagnostico','recomendacion','impacto'] } }
+      titulo:{type:'string', description:'Insight accionable en UNA sola frase: empieza con verbo en imperativo, es específico e incluye la métrica/señal clave. Ej: "Audita el píxel de conversión: 341 clics y 0 ventas registradas".'},
+      diagnostico:{type:'string', description:'Qué está pasando y por qué (1-2 frases, con datos).'},
+      recomendacion:{type:'string', description:'El cómo concreto: pasos accionables.'},
+      impacto:{type:'string', description:'Resultado esperado si se aplica.'}
+    }, required:['campana','objetivo','prioridad','titulo','diagnostico','recomendacion','impacto'] } }
   },
   required:['resumen','recomendaciones']
 };

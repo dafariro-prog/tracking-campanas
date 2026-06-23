@@ -85,17 +85,21 @@
   .sec-title{font-size:15px;font-weight:600;margin:6px 4px 14px;display:flex;align-items:center;gap:8px}
   .sec-title small{font-weight:500;color:var(--muted);font-size:12px}
 
-  .reco-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:16px;margin-bottom:20px}
-  .reco{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--line);border-radius:18px;padding:16px 18px;box-shadow:var(--shadow)}
+  .reco-list{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+  .reco{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--line);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
   .reco.alta{border-left-color:#EB3B38}.reco.media{border-left-color:#F6993E}.reco.baja{border-left-color:#AAAAAA}
-  .reco .r-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:7px}
-  .reco .r-camp{font-weight:600;font-size:13px;line-height:1.3}
+  .reco summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:12px;padding:14px 18px}
+  .reco summary::-webkit-details-marker{display:none}
+  .reco summary::after{content:'▸';color:var(--muted);transition:transform .2s;font-size:12px}
+  .reco[open] summary::after{transform:rotate(90deg)}
   .reco .r-prio{font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;padding:3px 8px;border-radius:6px;color:#fff;white-space:nowrap}
-  .reco .r-meta{font-size:11px;color:var(--muted);margin-bottom:10px;display:flex;gap:7px;flex-wrap:wrap;align-items:center}
-  .reco .r-diag{font-size:12.5px;color:var(--txt);margin-bottom:9px}
-  .reco .r-rec{font-size:13px;font-weight:600;color:var(--txt);margin-bottom:6px}
-  .reco .r-imp{font-size:11.5px;color:var(--muted)}
-  .reco .r-imp b{color:#1DCB78;font-weight:600}
+  .reco .r-title{font-weight:600;font-size:13.5px;line-height:1.35;flex:1}
+  .reco summary .r-meta{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px;white-space:nowrap}
+  .reco .r-body{padding:12px 18px 16px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:9px;font-size:12.5px;line-height:1.5}
+  .reco .r-body b{font-weight:600;color:var(--txt)}
+  .reco .r-diag{color:var(--txt)}
+  .reco .r-imp b:last-child,.reco .r-imp{color:var(--muted)}
+  @media(max-width:680px){.reco summary .r-meta{display:none}}
   .obj-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:16px;margin-bottom:20px}
   .obj{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:0;box-shadow:var(--shadow);overflow:hidden}
   .obj .o-head{padding:14px 16px;color:#fff;display:flex;justify-content:space-between;align-items:flex-start}
@@ -219,7 +223,7 @@
   </div>
 
   <div class="sec-title">🤖 Recomendaciones de optimización <small id="recoMeta"></small></div>
-  <div class="reco-grid" id="recoGrid"></div>
+  <div class="reco-list" id="recoGrid"></div>
 
   <div class="sec-title">🎯 Desempeño por objetivo <small>· KPI clave y desglose por plataforma</small></div>
   <div class="obj-grid" id="objGrid"></div>
@@ -628,15 +632,22 @@ function renderRecos(){
   filt.sort((x,y)=>(ord[x.prioridad]??3)-(ord[y.prioridad]??3));
   const PCOL={alta:'#EB3B38',media:'#F6993E',baja:'#AAAAAA'};
   meta.textContent=`· ${filt.length} para tu selección · actualizado ${DATA.recos.updated?new Date(DATA.recos.updated).toLocaleDateString('es'):'—'}${DATA.recos.modelo?' · '+DATA.recos.modelo:''}`;
-  grid.innerHTML=filt.slice(0,60).map(r=>`
-    <div class="reco ${r.prioridad||'baja'}">
-      <div class="r-top"><span class="r-camp">${esc(r.campana||'General')}</span>
-        <span class="r-prio" style="background:${PCOL[r.prioridad]||'#999'}">${esc(r.prioridad||'')}</span></div>
-      <div class="r-meta"><span class="dot" style="background:${agHex(r.agencia)}"></span>${esc(r.cuenta)} · ${esc(r.pais)}${r.objetivo&&r.objetivo!=='General'?' · '+esc(r.objetivo):''}</div>
-      <div class="r-diag">${esc(r.diagnostico)}</div>
-      <div class="r-rec">💡 ${esc(r.recomendacion)}</div>
-      ${r.impacto?`<div class="r-imp">Impacto esperado: <b>${esc(r.impacto)}</b></div>`:''}
-    </div>`).join('');
+  grid.innerHTML=filt.slice(0,80).map(r=>{
+    const titulo = esc(r.titulo || r.recomendacion || r.diagnostico || r.campana || 'Recomendación');
+    return `<details class="reco ${r.prioridad||'baja'}">
+      <summary>
+        <span class="r-prio" style="background:${PCOL[r.prioridad]||'#999'}">${esc(r.prioridad||'')}</span>
+        <span class="r-title">${titulo}</span>
+        <span class="r-meta"><span class="dot" style="background:${agHex(r.agencia)}"></span>${esc(r.cuenta)}${r.objetivo&&r.objetivo!=='General'?' · '+esc(r.objetivo):''}</span>
+      </summary>
+      <div class="r-body">
+        ${r.campana&&r.campana!=='General'?`<div class="r-diag"><b>Campaña:</b> ${esc(r.campana)}</div>`:''}
+        ${r.diagnostico?`<div class="r-diag"><b>Qué está pasando:</b> ${esc(r.diagnostico)}</div>`:''}
+        ${r.recomendacion?`<div><b>💡 Acción:</b> ${esc(r.recomendacion)}</div>`:''}
+        ${r.impacto?`<div class="r-imp"><b>Impacto esperado:</b> ${esc(r.impacto)}</div>`:''}
+      </div>
+    </details>`;
+  }).join('');
 }
 
 // KPI aplicable según tipo de objetivo
