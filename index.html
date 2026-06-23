@@ -499,7 +499,7 @@ function renderHero(det){
   const cards=[
     {label:'Campañas',          val:fmt(camps.size),  sub:'en el periodo',                 dot:'#3A75EB'},
     {label:'Plataformas',       val:plats.length,     sub:plats.join(' · ')||'—',          dot:'#BD8AF2'},
-    {label:'Campañas activas',  val:activas,          sub:`consumo ≤ ${DIAS_INACTIVA} días`,dot:'#1DCB78'},
+    {label:'Campañas activas',  val:activas,          sub:'',dot:'#1DCB78'},
     {label:'Inversión',         val:money(spend),     sub:copModeNow()?'pesos colombianos (COP)':'USD', dot:'#F6993E'},
   ];
   document.getElementById('hero').innerHTML=cards.map(c=>`
