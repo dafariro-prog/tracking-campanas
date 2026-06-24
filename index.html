@@ -34,6 +34,19 @@
   .filters-chips{display:flex;flex-wrap:wrap;gap:14px 28px;margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
   .filters select{width:100%}
   .fgroup{display:flex;flex-direction:column;gap:7px;min-width:0}
+  .ms{position:relative}
+  .ms-btn{width:100%;text-align:left;background:#fff;border:1.5px solid var(--line);border-radius:9px;padding:9px 11px;font-size:13px;cursor:pointer;font-family:inherit;color:var(--txt);display:flex;justify-content:space-between;align-items:center;gap:6px}
+  .ms-btn::after{content:'▾';color:var(--muted);font-size:11px}
+  .ms-panel{display:none;position:absolute;z-index:40;top:calc(100% + 4px);left:0;right:0;min-width:230px;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:8px;max-height:300px;flex-direction:column}
+  .ms-panel.open{display:flex}
+  .ms-search{margin-bottom:6px}
+  .ms-opts{overflow-y:auto;display:flex;flex-direction:column;gap:1px}
+  .ms-opt{display:flex;align-items:center;gap:8px;font-size:12.5px;padding:5px 6px;border-radius:6px;cursor:pointer}
+  .ms-opt:hover{background:#f5f5f5}
+  .ms-opt input{width:auto;flex:none}
+  .ms-empty{font-size:12px;color:var(--muted);padding:8px}
+  .camp-search{border:1.5px solid var(--line);border-radius:9px;padding:7px 11px;font-size:12.5px;font-family:inherit;width:230px;max-width:48%;outline:none;font-weight:400}
+  .camp-search:focus{border-color:var(--accent)}
   .fgroup label{font-size:10.5px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.6px}
   select,input{background:#fff;border:1.5px solid var(--line);color:var(--txt);padding:9px 11px;border-radius:9px;font-size:13px;outline:none;transition:.15s}
   select:focus,input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,0,0,.12)}
@@ -178,7 +191,15 @@
       <div class="fgroup"><label>Agencia</label><select id="fAgencia"></select></div>
       <div class="fgroup"><label>País</label><select id="fPais"></select></div>
       <div class="fgroup"><label>Cuenta</label><select id="fCuenta"></select></div>
-      <div class="fgroup" id="gAccount" style="display:none"><label>Account name</label><select id="fAccount"></select></div>
+      <div class="fgroup" id="gAccount" style="display:none"><label>Account name</label>
+        <div class="ms" id="msAccount">
+          <button type="button" class="ms-btn" id="msAccountBtn">Todos</button>
+          <div class="ms-panel" id="msAccountPanel">
+            <input type="text" class="ms-search" id="msAccountSearch" placeholder="Buscar…">
+            <div class="ms-opts" id="msAccountOpts"></div>
+          </div>
+        </div>
+      </div>
       <div class="fgroup" id="gPlanner" style="display:none"><label>Planner</label><select id="fPlanner"></select></div>
       <div class="fgroup" id="gImplementador" style="display:none"><label>Implementador</label><select id="fImplementador"></select></div>
       <div class="fgroup"><label>Estado</label><select id="fEstado">
@@ -222,7 +243,9 @@
   <div class="obj-grid" id="objGrid"></div>
 
   <div class="card">
-    <h3>📋 Detalle de campañas <span style="font-weight:500;color:var(--muted);font-size:12px">· estado, periodo, objetivo y el KPI que aplica a cada uno</span></h3>
+    <h3>📋 Detalle de campañas
+      <input id="campSearch" class="camp-search" placeholder="🔎 Filtrar campaña…">
+    </h3>
     <div style="overflow-x:auto">
       <table id="tbl">
         <thead><tr>
@@ -278,7 +301,7 @@ const PAIRS=[
   {vol:'conversions',volLabel:'Conversiones',kpiLabel:'CPA', color:'#EB3B38', kpi:d=>d.conversions?d.spend/d.conversions:0},
 ];
 
-let DATA={rows:[]}, platSel=new Set(), tipoSel=new Set();
+let DATA={rows:[]}, platSel=new Set(), tipoSel=new Set(), accountSel=new Set(), accountOpts=[];
 let lineChart, platChart, spendPlatChart, sortK='spend', sortDir=-1;
 
 function fmt(n){return new Intl.NumberFormat('es').format(Math.round(n));}
@@ -417,6 +440,15 @@ function buildFilters(){
   document.querySelectorAll('#tbl th').forEach(th=>{
     th.onclick=()=>{const k=th.dataset.k;sortDir=(sortK===k)?-sortDir:-1;sortK=k;render();};
   });
+
+  // Multi-select "Account name"
+  const msPanel=document.getElementById('msAccountPanel');
+  document.getElementById('msAccountBtn').onclick=e=>{e.stopPropagation();msPanel.classList.toggle('open');};
+  document.getElementById('msAccountSearch').oninput=renderAccountOpts;
+  document.addEventListener('click',e=>{ if(!document.getElementById('msAccount').contains(e.target)) msPanel.classList.remove('open'); });
+
+  // Buscador de campaña en el detalle
+  document.getElementById('campSearch').oninput=renderTable;
 }
 
 function setupPlannerFilters(){
@@ -452,19 +484,33 @@ function fillAccounts(){
   if(!DATA.detalle.some(r=>r.account_name)){ g.style.display='none'; return; }
   g.style.display='flex';
   const a=V('fAgencia'), p=V('fPais'), c=V('fCuenta');
-  const accs=[...new Set(DATA.detalle.filter(r=>(!a||r.agencia===a)&&(!p||r.pais===p)&&(!c||r.cuenta===c)).map(r=>r.account_name).filter(Boolean))].sort();
-  const sel=document.getElementById('fAccount'), cur=sel.value;
-  sel.innerHTML='<option value="">Todos</option>'+accs.map(x=>`<option ${x===cur?'selected':''}>${esc(x)}</option>`).join('');
-  sel.onchange=render;
+  accountOpts=[...new Set(DATA.detalle.filter(r=>(!a||r.agencia===a)&&(!p||r.pais===p)&&(!c||r.cuenta===c)).map(r=>r.account_name).filter(Boolean))].sort();
+  accountSel=new Set([...accountSel].filter(x=>accountOpts.includes(x)));  // conservar solo válidos
+  renderAccountOpts(); updateAccountBtn();
+}
+function renderAccountOpts(){
+  const q=(document.getElementById('msAccountSearch').value||'').toLowerCase();
+  const list=accountOpts.filter(x=>!q||x.toLowerCase().includes(q));
+  const box=document.getElementById('msAccountOpts');
+  box.innerHTML=list.length?list.map(x=>`<label class="ms-opt"><input type="checkbox" value="${esc(x)}" ${accountSel.has(x)?'checked':''}>${esc(x)}</label>`).join('')
+    :'<div class="ms-empty">Sin resultados</div>';
+  box.querySelectorAll('input').forEach(cb=>cb.onchange=()=>{
+    cb.checked?accountSel.add(cb.value):accountSel.delete(cb.value);
+    updateAccountBtn(); render();
+  });
+}
+function updateAccountBtn(){
+  document.getElementById('msAccountBtn').textContent =
+    accountSel.size===0 ? 'Todos' : accountSel.size+' seleccionado'+(accountSel.size>1?'s':'');
 }
 
 const V=id=>document.getElementById(id).value;
 
 function filtered(){
   // Serie diaria (no trae objetivo ni estado): agencia, país, cuenta, planner, plataforma, año, mes
-  const a=V('fAgencia'), c=V('fCuenta'), p=V('fPais'), ac=V('fAccount'), pl=V('fPlanner'), im=V('fImplementador'), yr=V('fAnio'), mo=V('fMes');
+  const a=V('fAgencia'), c=V('fCuenta'), p=V('fPais'), pl=V('fPlanner'), im=V('fImplementador'), yr=V('fAnio'), mo=V('fMes');
   return DATA.rows.filter(r=>
-    (!a||r.agencia===a)&&(!c||r.cuenta===c)&&(!p||r.pais===p)&&(!ac||r.account_name===ac)&&
+    (!a||r.agencia===a)&&(!c||r.cuenta===c)&&(!p||r.pais===p)&&(!accountSel.size||accountSel.has(r.account_name))&&
     (!pl||r.planner===pl)&&(!im||r.implementador===im)&&platSel.has(r.plataforma)&&
     (!yr||r.date.slice(0,4)===yr)&&(!mo||r.date.slice(5,7)===mo))
     .map(r=>({...r, spend:convSpend(r)}));
@@ -472,9 +518,9 @@ function filtered(){
 const sum=(arr,k)=>arr.reduce((s,r)=>s+r[k],0);
 
 function detalleFiltered(){
-  const a=V('fAgencia'), c=V('fCuenta'), p=V('fPais'), ac=V('fAccount'), est=V('fEstado'), pl=V('fPlanner'), im=V('fImplementador'), yr=V('fAnio'), mo=V('fMes');
+  const a=V('fAgencia'), c=V('fCuenta'), p=V('fPais'), est=V('fEstado'), pl=V('fPlanner'), im=V('fImplementador'), yr=V('fAnio'), mo=V('fMes');
   return (DATA.detalle||[]).filter(r=>
-    (!a||r.agencia===a)&&(!c||r.cuenta===c)&&(!p||r.pais===p)&&(!ac||r.account_name===ac)&&
+    (!a||r.agencia===a)&&(!c||r.cuenta===c)&&(!p||r.pais===p)&&(!accountSel.size||accountSel.has(r.account_name))&&
     platSel.has(r.plataforma)&&tipoSel.has(tipoDe(r.objetivo))&&
     (!est || (est==='act'?esActiva(r):!esActiva(r)))&&
     (!pl||r.planner===pl)&&(!im||r.implementador===im)&&
@@ -702,6 +748,8 @@ function renderTable(){
       resultado:o[M.vol[1]],
       kpi:M.calc(o)};
   });
+  const q=(document.getElementById('campSearch').value||'').trim().toLowerCase();
+  if(q) arr=arr.filter(o=>(o.campana||'').toLowerCase().includes(q));
   arr.sort((x,y)=>{const A=x[sortK],B=y[sortK];return ((typeof A==='string')?A.localeCompare(B):(A<B?1:-1))*sortDir;});
 
   document.querySelector('#tbl tbody').innerHTML=arr.map(o=>{
