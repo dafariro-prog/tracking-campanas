@@ -45,8 +45,11 @@
   .ms-opt:hover{background:#f5f5f5}
   .ms-opt input{width:auto;flex:none}
   .ms-empty{font-size:12px;color:var(--muted);padding:8px}
-  .camp-search{border:1.5px solid var(--line);border-radius:9px;padding:7px 11px;font-size:12.5px;font-family:inherit;width:230px;max-width:48%;outline:none;font-weight:400}
+  .dt-actions{display:flex;gap:8px;align-items:center;margin-left:auto}
+  .camp-search{border:1.5px solid var(--line);border-radius:9px;padding:7px 11px;font-size:12.5px;font-family:inherit;width:220px;outline:none;font-weight:400}
   .camp-search:focus{border-color:var(--accent)}
+  .csv-btn{background:#151515;color:#fff;border:0;border-radius:9px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap}
+  .csv-btn:hover{background:#000}
   .fgroup label{font-size:10.5px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.6px}
   select,input{background:#fff;border:1.5px solid var(--line);color:var(--txt);padding:9px 11px;border-radius:9px;font-size:13px;outline:none;transition:.15s}
   select:focus,input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,0,0,.12)}
@@ -244,7 +247,10 @@
 
   <div class="card">
     <h3>📋 Detalle de campañas
-      <input id="campSearch" class="camp-search" placeholder="🔎 Filtrar campaña…">
+      <span class="dt-actions">
+        <input id="campSearch" class="camp-search" placeholder="🔎 Filtrar campaña…">
+        <button id="csvBtn" class="csv-btn">⬇️ CSV</button>
+      </span>
     </h3>
     <div style="overflow-x:auto">
       <table id="tbl">
@@ -302,7 +308,7 @@ const PAIRS=[
 ];
 
 let DATA={rows:[]}, platSel=new Set(), tipoSel=new Set(), accountSel=new Set(), accountOpts=[];
-let lineChart, platChart, spendPlatChart, sortK='spend', sortDir=-1;
+let lineChart, platChart, spendPlatChart, sortK='spend', sortDir=-1, lastTableRows=[];
 
 function fmt(n){return new Intl.NumberFormat('es').format(Math.round(n));}
 function fmt2(n){return new Intl.NumberFormat('es',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n);}
@@ -449,6 +455,35 @@ function buildFilters(){
 
   // Buscador de campaña en el detalle
   document.getElementById('campSearch').oninput=renderTable;
+  // Descargar CSV del detalle
+  document.getElementById('csvBtn').onclick=downloadCSV;
+}
+
+function downloadCSV(){
+  const rows=lastTableRows||[];
+  if(!rows.length){ return; }
+  const num=n=>Math.round((+n||0)*100)/100;
+  const cols=[
+    ['Agencia',r=>r.agencia],['Cuenta',r=>r.cuenta],['Account name',r=>r.account_name],
+    ['Campaña',r=>r.campana],['País',r=>r.pais],['Planner',r=>r.planner],['Implementador',r=>r.implementador],
+    ['Plataforma',r=>r.plataforma],['Objetivo',r=>r.tipo],['Estado',r=>r.activa?'Activa':'Finalizada'],
+    ['Inicio',r=>r.inicio],['Fin',r=>r.fin],
+    ['Inversión',r=>num(r.spend)],['Impresiones',r=>r.impressions],['Clics',r=>r.clicks],
+    ['Views',r=>r.views],['Conversiones',r=>num(r.conversions)],
+    ['CTR %',r=>r.impressions?num(r.clicks/r.impressions*100):0],
+    ['CPC',r=>r.clicks?num(r.spend/r.clicks):0],
+    ['CPM',r=>r.impressions?num(r.spend/r.impressions*1000):0],
+    ['CPV',r=>r.views?num(r.spend/r.views):0],
+    ['CPA',r=>r.conversions?num(r.spend/r.conversions):0],
+  ];
+  const q=v=>{v=(v==null?'':String(v));return /[",\n;]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
+  const lines=[cols.map(c=>q(c[0])).join(',')];
+  rows.forEach(r=>lines.push(cols.map(c=>q(c[1](r))).join(',')));
+  const blob=new Blob(['﻿'+lines.join('\n')],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download='detalle_campanas.csv'; document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
 }
 
 function setupPlannerFilters(){
@@ -733,7 +768,7 @@ function renderTable(){
   const groups={};
   detalleFiltered().forEach(o=>{
     const k=o.campana+'|'+o.plataforma+'|'+o.objetivo;
-    const g=groups[k]||(groups[k]={agencia:o.agencia,pais:o.pais,cuenta:o.cuenta,planner:o.planner,implementador:o.implementador,
+    const g=groups[k]||(groups[k]={agencia:o.agencia,pais:o.pais,cuenta:o.cuenta,account_name:o.account_name,planner:o.planner,implementador:o.implementador,
       campana:o.campana,plataforma:o.plataforma,objetivo:o.objetivo,inicio:o.inicio,fin:o.fin,last_spend:o.last_spend,
       spend:0,impressions:0,clicks:0,reach:0,views:0,engagements:0,conversions:0});
     ['spend','impressions','clicks','reach','views','engagements','conversions'].forEach(kk=>g[kk]+=o[kk]||0);
@@ -751,6 +786,7 @@ function renderTable(){
   const q=(document.getElementById('campSearch').value||'').trim().toLowerCase();
   if(q) arr=arr.filter(o=>(o.campana||'').toLowerCase().includes(q));
   arr.sort((x,y)=>{const A=x[sortK],B=y[sortK];return ((typeof A==='string')?A.localeCompare(B):(A<B?1:-1))*sortDir;});
+  lastTableRows=arr;
 
   document.querySelector('#tbl tbody').innerHTML=arr.map(o=>{
     const M=TIPO_META[o.tipo];
