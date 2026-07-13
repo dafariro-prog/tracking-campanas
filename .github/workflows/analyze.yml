@@ -2,8 +2,8 @@ name: Análisis diario de campañas (Gemini)
 
 on:
   schedule:
-    # 12:30 UTC = 06:30 CR/PA. Corre después del refresco de data (11:00 UTC).
-    - cron: "30 12 * * *"
+    # 16:30 UTC = 11:30 Colombia. Corre después del 2º refresco (16:00 UTC).
+    - cron: "30 16 * * *"
   workflow_dispatch: {}
 
 permissions:

@@ -2,8 +2,10 @@ name: Refresco diario del tracking
 
 on:
   schedule:
-    # 11:00 UTC = 05:00 Costa Rica / Panamá. Corre todos los días.
-    - cron: "0 11 * * *"
+    # 2 corridas diarias. Colombia es UTC-5:
+    #   10:00 UTC = 05:00 Colombia · 16:00 UTC = 11:00 Colombia
+    # (GitHub Actions puede retrasar el disparo unos minutos.)
+    - cron: "0 10,16 * * *"
   workflow_dispatch: {}   # permite correrlo manualmente desde la pestaña Actions
 
 permissions:
